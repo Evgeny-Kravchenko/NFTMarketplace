@@ -6,21 +6,37 @@ const { setGlobalState, useGlobalState, getGlobalState } = createGlobalState({
   updateModal: "scale-0",
   loading: { show: false, msg: "" },
   alert: { show: false, msg: "", color: "" },
+  connectedAccount: "",
+  nft: null,
+  nfts: [],
+  transactions: [],
+  contract: null,
 });
 
 const setAlert = (msg, color) => {
-  const alert = getGlobalState("alert");
   setGlobalState("loading", { show: false, msg: "" });
   setGlobalState("alert", { show: true, msg, color });
-  const timer = setTimeot(() => {
+  const timer = setTimeout(() => {
     clearTimeout(timer);
     setGlobalState("alert", { show: false, msg, color });
   }, 6000);
 };
 
 const setLoadingMsg = (msg) => {
-  const loading = getGlobalState("loading");
-  setGlobalState("loading", { ...loading, msg });
+  setGlobalState("loading", { show: true, msg });
+};
+
+const truncate = (text, startChars, endChars, maxLength) => {
+  if (text.length > maxLength) {
+    let start = text.substring(0, startChars);
+    const end = text.substring(text.length - endChars, text.length);
+
+    while (start.length + end.length < maxLength) {
+      start = start + ".";
+    }
+    return start + end;
+  }
+  return text;
 };
 
 export {
@@ -29,4 +45,5 @@ export {
   getGlobalState,
   setLoadingMsg,
   setAlert,
+  truncate,
 };

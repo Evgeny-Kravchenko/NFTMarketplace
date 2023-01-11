@@ -1,20 +1,40 @@
 import React from "react";
 import { FaTimes } from "react-icons/fa";
 import Identicon from "react-identicons";
-import artPreview from "../../assets/art-preview.jpg";
-import { useGlobalState, setGlobalState } from "../../store";
+import {
+  useGlobalState,
+  setGlobalState,
+  truncate,
+  setLoadingMsg,
+  setAlert,
+} from "../../store";
+import { buyNFT } from "../../Blockchain.services";
 
 export default function ShowNFT() {
   const [showModal] = useGlobalState("showModal");
+  const [nft] = useGlobalState("nft");
+  const [connectedAccount] = useGlobalState("connectedAccount");
 
   const closeModal = () => {
     setGlobalState("showModal", "scale-0");
-    resetForm();
   };
 
   const opemUpdateNFTHandler = () => {
+    setGlobalState("nft", nft);
     setGlobalState("showModal", "scale-0");
     setGlobalState("updateModal", "scale-100");
+  };
+
+  const handlePurchase = async () => {
+    try {
+      setLoadingMsg("Purchasing, awaiting MetaMask approval...");
+      await buyNFT(nft);
+      setAlert("NFT purchased");
+      window.location.reload();
+    } catch (err) {
+      console.log("Error purchasing", err);
+      setAlert("Purchase failed", "red");
+    }
   };
 
   return (
@@ -37,51 +57,52 @@ export default function ShowNFT() {
             <div className="shrink-0 rounded-xl overflow-hidden h-40 w-40">
               <img
                 className="h-full w-full object-cover cursor-pointer"
-                src={artPreview}
+                src={nft?.metadataURI}
                 alt="NFT"
               />
             </div>
           </div>
 
           <div className="flex flex-col justify-start rounded-xl mt-5">
-            <h4 className="text-white font-semibold">Title</h4>
-            <p className="text-gray-400 text-xs my-1">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde
-              magni quaerat ipsum debitis. Quisquam accusamus a ducimus modi
-              atque ex!
-            </p>
+            <h4 className="text-white font-semibold">{nft?.title}</h4>
+            <p className="text-gray-400 text-xs my-1">{nft?.description}</p>
             <div className="flex justify-between items-center mt-3 text-white">
               <div className="flex justify-start items-center">
                 <Identicon
                   className="h-10 w-10 object-contain rounded-full mr-3"
-                  string="sfkmskfmsf"
+                  string={nft?.owner}
                   size={50}
                 />
                 <div className="flex flex-col justify-center items-start">
                   <small className="font-bold">@Owner</small>
                   <small className="text-pink-800 font-semibold">
-                    0x31...03f2
+                    {truncate(nft?.owner || "", 4, 4, 11)}
                   </small>
                 </div>
               </div>
               <div className="flex flex-col">
                 <small className="text-xs">Current Price</small>
-                <p className="text-sm font-semibold">0.34 ETH</p>
+                <p className="text-sm font-semibold">{nft?.cost} ETH</p>
               </div>
             </div>
           </div>
-
-          <div className="flex justify-between items-center space-x-2">
-            <button className="flex justify-center items-center w-full mt-5 p-2 text-white shadow-lg shadow-black bg-[#e32970] hover:bg-[#bd366f] rounded-full transition-[0.2s]">
-              Purchase
-            </button>
+          {connectedAccount === nft?.owner ? (
             <button
               onClick={opemUpdateNFTHandler}
               className="flex justify-center items-center w-full mt-5 p-2 text-white shadow-lg shadow-black bg-[#e32970] hover:bg-[#bd366f] rounded-full transition-[0.2s]"
             >
               Change Price
             </button>
-          </div>
+          ) : (
+            <div
+              className="flex justify-between items-center space-x-2"
+              onClick={handlePurchase}
+            >
+              <button className="flex justify-center items-center w-full mt-5 p-2 text-white shadow-lg shadow-black bg-[#e32970] hover:bg-[#bd366f] rounded-full transition-[0.2s]">
+                Purchase
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

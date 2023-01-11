@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Artworks from "./components/Artworks";
@@ -9,7 +10,14 @@ import UpdateNFT from "./components/UpdateNFT";
 import Loading from "./components/Loading";
 import Alert from "./components/Alert";
 
+import { isWalletConnected, getAllNFTs } from "./Blockchain.services";
+
 const App = () => {
+  useEffect(async () => {
+    await isWalletConnected();
+    await getAllNFTs();
+  }, []);
+
   return (
     <div className="min-h-screen">
       <div className="gradient-bg-hero">

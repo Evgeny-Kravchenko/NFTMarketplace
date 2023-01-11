@@ -1,9 +1,11 @@
 import React from "react";
 import Identicon from "react-identicons";
 import artPreview from "../../assets/art-preview.jpg";
-import { setGlobalState } from "../../store";
+import { setGlobalState, truncate, useGlobalState } from "../../store";
 
 export default function Hero() {
+  const [connectedAccount] = useGlobalState("connectedAccount");
+
   const openModal = () => {
     setGlobalState("modal", "scale-100");
   };
@@ -52,11 +54,13 @@ export default function Hero() {
         <div className="flex justify-start items-center p-3">
           <Identicon
             className="h-10 w-10 object-contain rounded-full mr-3"
-            string={"0x21...786a"}
+            string={connectedAccount}
             size={50}
           />
           <div>
-            <p className="text-white font-semibold">0x21...786a</p>
+            <p className="text-white font-semibold">
+              {truncate(connectedAccount || "", 4, 4, 11)}
+            </p>
             <small className="text-pink-800 font-bold">@you</small>
           </div>
         </div>

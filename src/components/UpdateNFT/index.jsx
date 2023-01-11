@@ -1,11 +1,17 @@
 import React, { useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import artPreview from "../../assets/art-preview.jpg";
-import { useGlobalState, setGlobalState } from "../../store";
+import {
+  useGlobalState,
+  setGlobalState,
+  setLoadingMsg,
+  setAlert,
+} from "../../store";
+import { updateNFT } from "../../Blockchain.services";
 
 export default function UpdateNFT() {
   const [price, setPrice] = useState("");
-
+  const [nft] = useGlobalState("nft");
   const [modal] = useGlobalState("updateModal");
 
   const handleChangePrice = (e) => {
@@ -21,10 +27,23 @@ export default function UpdateNFT() {
     resetForm();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!price) return;
-    console.log("Updated...");
+    if (!price || price <= 0) return;
+    setGlobalState("modal", "scale-0");
+    setLoadingMsg("Initializing price update...");
+
+    try {
+      setLoadingMsg("Price updating...");
+      setGlobalState("updateModal", "scale-0");
+      await updateNFT({ id: nft.id, cost: price });
+      setAlert("Price updated...", "green");
+      window.location.reload();
+    } catch (err) {
+      console.log("Error updating price", err);
+      setAlert("Update failed...", "red");
+    }
+
     closeModal();
   };
 

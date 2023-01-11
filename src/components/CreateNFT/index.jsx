@@ -1,7 +1,35 @@
 import React, { useState } from "react";
 import { FaTimes } from "react-icons/fa";
+import { create } from "ipfs-http-client";
 import artPreview from "../../assets/art-preview.jpg";
-import { useGlobalState, setGlobalState } from "../../store";
+import {
+  useGlobalState,
+  setGlobalState,
+  setAlert,
+  setLoadingMsg,
+} from "../../store";
+import { mintNFT } from "../../Blockchain.services";
+
+// Create authentication string for creating an ipfs client
+
+const auth =
+  "Basic " +
+  Buffer.from(
+    process.env.REACT_APP_REACT_APP_INFURA_IPFS_PROJECT_ID +
+      ":" +
+      process.env.REACT_APP_INFURA_IPFS_SECRET_KEY
+  ).toString("base64");
+
+// Create IPFS Client to upload data
+
+const client = create({
+  host: "ipfs.infura.io",
+  port: "5001",
+  protocol: "https",
+  headers: {
+    authorization: auth,
+  },
+});
 
 export default function CreateNFT() {
   const [title, setTitle] = useState("");
@@ -12,8 +40,14 @@ export default function CreateNFT() {
 
   const [modal] = useGlobalState("modal");
 
-  const handleChangeFile = (e) => {
-    setImagBase64(e.target.value);
+  const handleChangeFile = async (e) => {
+    const reader = new FileReader();
+    if (e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    reader.onload = (readerEvent) => {
+      const file = readerEvent.target.result;
+      setImagBase64(file);
+      setFileUrl(e.target.files[0]);
+    };
   };
 
   const handleChangeTitle = (e) => {
@@ -41,10 +75,31 @@ export default function CreateNFT() {
     resetForm();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !description || !price) return;
-    console.log("Minted...");
+    // Close create NFT modal window
+    setGlobalState("modal", "scale-0");
+    // Open loading modal window
+    setLoadingMsg("Uploading to IPFS...");
+
+    try {
+      // Upload a file as url to Infura IPFS
+      const created = await client.add(fileUrl);
+      setLoadingMsg("Uploaded, approve transaction now");
+      const metadataURI = `https://ipfs.io/ipfs/${created.path}`;
+      const nft = { title, description, price, metadataURI };
+      // Mint NFT
+      await mintNFT(nft);
+
+      closeModal();
+      setAlert("Miniting completed...", "green");
+      window.location.reload();
+    } catch (err) {
+      console.log("Error uploading file", err);
+      setAlert("Minting failed", "red");
+    }
+
     closeModal();
   };
 
@@ -81,6 +136,7 @@ export default function CreateNFT() {
                 type="file"
                 accept="image/png, image/gif, image/webp"
                 className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold hover:file:bg-[#1d2631] focus:outline-none cursor-pointer focus:ring-0"
+                onChange={handleChangeFile}
               />
             </label>
           </div>
